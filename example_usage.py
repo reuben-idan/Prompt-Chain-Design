@@ -1,4 +1,4 @@
-from prompt-chain import run_prompt_chain
+exec(open('prompt-chain.py').read())
 
 if __name__ == "__main__":
     customer_query = "I can't log into my online banking account and I need to check my recent transactions"
