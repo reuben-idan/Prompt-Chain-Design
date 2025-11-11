@@ -1,13 +1,52 @@
 def run_prompt_chain(customer_query):
     """Execute 5-stage banking support prompt chain with improved prompts."""
     
-    # Stage 1: Intent Interpretation with structured analysis
+    # Stage 1: Intent Interpretation
+    intent_prompt = f"""You are a banking customer service analyst. Analyze this customer query and extract the core intent.
+
+Customer Query: "{customer_query}"
+
+Instructions:
+- Identify what the customer specifically wants or needs
+- Determine the urgency level (low/medium/high)
+- Note any emotional indicators (frustrated, confused, urgent)
+- Provide a clear 1-sentence summary of their primary intent
+
+Format your response as:
+Intent: [clear description]
+Urgency: [low/medium/high]
+Emotion: [neutral/frustrated/confused/urgent]"""
+
+    # Simulate LLM response for Stage 1
     urgency = "high" if any(word in customer_query.lower() for word in ["urgent", "immediately", "asap", "emergency"]) else "medium" if any(word in customer_query.lower() for word in ["can't", "unable", "won't", "problem"]) else "low"
     emotion = "frustrated" if any(word in customer_query.lower() for word in ["can't", "won't", "problem", "issue"]) else "confused" if "how" in customer_query.lower() or "what" in customer_query.lower() else "neutral"
     
     intent_result = f"Intent: Customer needs assistance with {customer_query.lower()}\nUrgency: {urgency}\nEmotion: {emotion}"
 
-    # Stage 2: Category Mapping with confidence scores
+    # Stage 2: Category Mapping
+    category_mapping_prompt = f"""You are a banking service categorization expert. Map this customer intent to relevant banking service categories.
+
+Customer Intent: {intent_result}
+Original Query: "{customer_query}"
+
+Available Categories:
+- Account Opening: New account creation, account types, requirements
+- Billing Issue: Disputes, unexpected charges, payment problems
+- Account Access: Login issues, password resets, account lockouts
+- Transaction Inquiry: Payment status, transfer questions, transaction history
+- Card Services: Card issues, replacements, activations, limits
+- Account Statement: Balance inquiries, statement requests, account summaries
+- Loan Inquiry: Loan applications, rates, payment schedules, refinancing
+- General Information: Hours, locations, services, general questions
+
+Instructions:
+- List 1-3 most relevant categories with confidence scores (1-10)
+- Explain why each category applies
+- Consider overlapping categories
+
+Format: Category Name (confidence): reasoning"""
+
+    # Simulate LLM response for Stage 2
     categories = []
     query_lower = customer_query.lower()
     
@@ -31,7 +70,25 @@ def run_prompt_chain(customer_query):
     
     category_mapping_result = '\n'.join(categories[:3])
 
-    # Stage 3: Category Selection with reasoning
+    # Stage 3: Category Selection
+    category_selection_prompt = f"""You are a banking service router. Select the single best category for this customer query.
+
+Customer Query: "{customer_query}"
+Intent Analysis: {intent_result}
+Potential Categories: {category_mapping_result}
+
+Decision Criteria:
+- Primary issue takes precedence over secondary concerns
+- Choose the category that requires immediate attention
+- Consider which department can best resolve the issue
+
+Provide:
+Selected Category: [category name]
+Confidence Level: [1-10]
+Reasoning: [one clear sentence explaining the choice]
+Alternative: [backup category if primary fails]"""
+
+    # Simulate LLM response for Stage 3
     selected_category = categories[0].split(' (')[0] if categories else 'General Information'
     confidence = categories[0].split('(')[1].split(')')[0] if categories and '(' in categories[0] else '7'
     
@@ -40,7 +97,26 @@ Confidence Level: {confidence}
 Reasoning: This category best matches the primary concern expressed in the customer query.
 Alternative: General Information"""
 
-    # Stage 4: Details Extraction with categorized requirements
+    # Stage 4: Details Extraction
+    details_extraction_prompt = f"""You are a banking support specialist preparing for customer assistance. Identify required information to resolve this query.
+
+Customer Query: "{customer_query}"
+Selected Category: {category_selection_result}
+Customer Intent: {intent_result}
+
+For {selected_category} issues, determine:
+- Essential information needed immediately
+- Optional information that would help
+- Security verification requirements
+- Potential follow-up questions
+
+Categorize as:
+REQUIRED: [critical information needed]
+HELPFUL: [additional useful details]
+SECURITY: [verification needed]
+FOLLOW-UP: [potential next questions]"""
+
+    # Simulate LLM response for Stage 4
     details_map = {
         'Account Access': {
             'REQUIRED': 'Account number, registered phone number',
@@ -80,7 +156,26 @@ HELPFUL: {details['HELPFUL']}
 SECURITY: {details['SECURITY']}
 FOLLOW-UP: {details['FOLLOW-UP']}"""
 
-    # Stage 5: Response Generation with empathy and structure
+    # Stage 5: Response Generation
+    response_generation_prompt = f"""You are a professional banking customer service representative. Craft a helpful response to this customer.
+
+Customer Query: "{customer_query}"
+Category: {category_selection_result}
+Customer Intent: {intent_result}
+Required Information: {details_extraction_result}
+
+Response Guidelines:
+- Acknowledge their specific concern
+- Show empathy for their situation
+- Clearly state what information you need
+- Explain why the information is necessary
+- Provide next steps or timeline
+- Maintain professional, helpful tone
+- Keep response concise (2-3 sentences)
+
+Generate a complete customer service response."""
+
+    # Simulate LLM response for Stage 5
     emotion_acknowledgment = {
         'frustrated': "I understand this situation is frustrating, and I'm here to help resolve it quickly.",
         'confused': "I can see you have questions, and I'll be happy to clarify everything for you.",
